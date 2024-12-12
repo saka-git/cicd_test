@@ -10,6 +10,9 @@ on:
       ref:
         type: string
         description: "リファレンス"
+      diff:
+        type: string
+        description: "core-apiが変更されているか"
       core_url:
         type: string
         description: "core-apiのURL"

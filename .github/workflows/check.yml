@@ -95,6 +95,7 @@ jobs:
     uses: ./.github/workflows/call_admin.yml
     with:
       ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+      diff: ${{ needs.diff.outputs.changed_core_api }}
       # !core-apiが変更されていれば新URLを使用、なければデフォルトURL
       core_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.core_url || '仮のurl' }}
 
