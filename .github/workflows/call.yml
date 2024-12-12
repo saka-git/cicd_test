@@ -16,24 +16,19 @@ on:
     outputs:
       core_url:
         description: "core-apiのURL"
-        value: ${{ jobs.call.outputs.core_url }}
+        value: ${{ jobs.call.outputs.core_url || '' }}
 
 jobs:
-  call:
+  core_deploy:
     runs-on: ubuntu-latest
+    if: ${{ inputs.diff == 'true' }}
     outputs:
       call_output: ${{ steps.call.outputs.test }}
       core_url: ${{ steps.call.outputs.core_url }}
     steps:
       - name: call
-        if: ${{ inputs.diff == 'true' }}
         id: call
         run: |
           echo "call"
           echo "ref: ${{ inputs.ref }}"
           echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
-
-      - name: core_url
-        if: ${{ inputs.diff == 'false' }}
-        run: |
-          echo "core_url=" >> "$GITHUB_OUTPUT"
