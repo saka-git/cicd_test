@@ -43,3 +43,13 @@ jobs:
         if: ${{ inputs.diff == 'false' }}
         run: |
           echo "core_url=" >> "$GITHUB_OUTPUT"
+
+      - name: ワークフローの出力を確認
+        if: ${{ inputs.core_url != '' }}
+        run: |
+          echo "core_url: ${{ inputs.core_url }}"
+
+      - name: ワークフローの出力を確認
+        if: ${{ inputs.core_url == '' }}
+        run: |
+          echo "core_url: none"
