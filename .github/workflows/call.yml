@@ -19,14 +19,14 @@ on:
         value: ${{ jobs.call.outputs.call_output }}
       url:
         description: "core-apiのURL"
-        value: ${{ jobs.call.outputs.url }}
+        value: ${{ jobs.call.outputs.core_url }}
 
 jobs:
   call:
     runs-on: ubuntu-latest
     outputs:
       call_output: ${{ steps.call.outputs.test }}
-      url: ${{ steps.call.outputs.core_url }}
+      core_url: ${{ steps.call.outputs.core_url }}
     steps:
       - name: call
         if: ${{ inputs.diff == 'true' }}
