@@ -31,12 +31,13 @@ runs:
         APP_NAME: ${{ inputs.app_name }}
       with:
         script: |
-          const prNumber = ${{ inputs.pr_number }};
-          const commitSha = ${{ inputs.commit_sha }};
+          const prNumber = "${{ inputs.pr_number }}";
+          const commitSha = "${{ inputs.commit_sha }}";
           const appName = process.env.APP_NAME;
           const vercelUrl = process.env.VERCEL_URL;
-          const owner = ${{ inputs.owner }};
-          const repo = ${{ inputs.repo }};
+          const owner = "${{ inputs.owner }}";
+          const repo = "${{ inputs.repo }}";
+
           const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
 
           const commentBody = `🚀 **${appName}のプレビュー環境が利用可能になりました**
@@ -49,6 +50,6 @@ runs:
           await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: prNumber,
+            issue_number: parseInt(prNumber),
             body: commentBody,
           });
