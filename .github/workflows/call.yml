@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       call_output: ${{ steps.call.outputs.test }}
-      url: ${{ steps.call.outputs.url }}
+      url: ${{ steps.call.outputs.core_url }}
     steps:
       - name: call
         if: ${{ inputs.diff == 'true' }}
