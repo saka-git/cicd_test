@@ -22,6 +22,10 @@ on:
 jobs:
   diff:
     runs-on: ubuntu-latest
+    outputs:
+      changed_core_api: ${{ steps.diff.outputs.changed_core_api }}
+      changed_admin: ${{ steps.diff.outputs.changed_admin }}
+      changed_employee: ${{ steps.diff.outputs.changed_employee }}
     steps:
       - name: チェックアウト
         uses: actions/checkout@v3
