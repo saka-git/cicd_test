@@ -14,7 +14,7 @@ on:
         type: string
         description: "リファレンス"
     outputs:
-      url:
+      core_url:
         description: "core-apiのURL"
         value: ${{ jobs.call.outputs.core_url }}
 
