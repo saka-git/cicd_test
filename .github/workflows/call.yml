@@ -32,3 +32,11 @@ jobs:
           echo "call"
           echo "ref: ${{ inputs.ref }}"
           echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
+
+  no_deploy:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.diff == 'false' }}
+    steps:
+      - name: core_url
+        run: |
+          echo "core_url=" >> "$GITHUB_OUTPUT"
