@@ -86,7 +86,6 @@ jobs:
     steps:
       - name: ワークフローの出力を確認
         run: |
-          echo "workflow_output: ${{ needs.core-api.outputs.workflow_output }}"
           echo "core_url: ${{ needs.core-api.outputs.core_url }}"
 
   admin:
