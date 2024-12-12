@@ -26,7 +26,7 @@ jobs:
       core_url: ${{ steps.call.outputs.core_url }}
     steps:
       - name: call
-        if: ${{ inputs.diff == 'false' }}
+        if: ${{ inputs.diff == 'true' }}
         id: call
         run: |
           echo "call"
@@ -34,6 +34,6 @@ jobs:
           echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
 
       - name: core_url
-        if: ${{ inputs.diff == 'true' }}
+        if: ${{ inputs.diff == 'false' }}
         run: |
           echo "core_url=" >> "$GITHUB_OUTPUT"
