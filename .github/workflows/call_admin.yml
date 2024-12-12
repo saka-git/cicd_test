@@ -42,6 +42,9 @@ jobs:
     env:
       APP_NAME: admin
     steps:
+      - name: チェックアウト
+        uses: actions/checkout@v3
+
       - name: ワークフローの出力を確認
         if: ${{ inputs.core_url != '' }}
         run: |
