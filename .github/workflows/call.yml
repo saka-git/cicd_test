@@ -1,0 +1,38 @@
+name: call
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
+
+on:
+  workflow_call:
+    inputs:
+      diff:
+        type: string
+        description: "差分"
+      ref:
+        type: string
+        description: "リファレンス"
+    outputs:
+      workflow_output:
+        description: "ワークフローの出力"
+        value: ${{ jobs.call.outputs.call_output }}
+
+jobs:
+  call:
+    runs-on: ubuntu-latest
+    outputs:
+      call_output: ${{ steps.call.outputs.test }}
+    steps:
+      - name: call
+        if: ${{ inputs.diff == 'true' }}
+        id: call
+        run: |
+          echo "call"
+          echo "ref: ${{ inputs.ref }}"
+          echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
+
+      - name: core_url
+        if: ${{ inputs.diff == 'false' }}
+        run: |
+          echo "core_url=" >> "$GITHUB_OUTPUT"

@@ -1,0 +1,74 @@
+name: "プロダクトをVercelにデプロイ"
+description: "Vercelのプロダクトをデプロイする"
+
+inputs:
+  vercel_token:
+    description: "Vercelのトークン"
+    required: true
+  environment:
+    description: "デプロイする環境（例: production, preview）"
+    required: true
+  vercel_team_id:
+    description: "VercelのチームID"
+    required: true
+  is_diff:
+    description: "差分があるかどうか、core-apiの場合はfalseにする"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: ブランチ名を取得し、urlを生成
+      id: get_branch_name
+      run: |
+        branch_name="${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}"
+        sanitized_branch_name=$(echo "$branch_name" | sed 's/[\/_]/-/g')
+        core_url="https://mono-verification-core-api-$sanitized_branch_name-eishin-team.vercel.app"
+        alias_domain="mono-verification-${{ env.APP_NAME }}-$sanitized_branch_name-eishin-team.vercel.app"
+        echo "branch_name=$branch_name" >> $GITHUB_OUTPUT
+        echo "core_url=$core_url" >> $GITHUB_OUTPUT
+        echo "alias_domain=$alias_domain" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Vercel環境情報を取得
+      run: |
+        if [ "${{ inputs.environment }}" = "production" ]; then
+          vercel pull --yes --environment=${{ inputs.environment }} --token=${{ inputs.vercel_token }}
+        else
+          vercel pull --yes --environment=${{ inputs.environment }} \
+            --git-branch=${{ steps.get_branch_name.outputs.branch_name }} \
+            --token=${{ inputs.vercel_token }}
+
+          if [ "${{ inputs.is_diff }}" = "true" ]; then
+            sed -i "/^CORE_URL=/d" .vercel/.env.preview.local
+            echo "CORE_URL=${{ steps.get_branch_name.outputs.core_url }}" >> .vercel/.env.preview.local
+          fi
+          # TODO:消す
+          cat .vercel/.env.${{ inputs.environment }}.local
+        fi
+      shell: bash
+
+    - name: プロジェクトのビルド
+      run: |
+        if [ "${{ inputs.environment }}" = "production" ]; then
+          vercel build --prod --token=${{ inputs.vercel_token }}
+        else
+          vercel build --token=${{ inputs.vercel_token }}
+        fi
+      shell: bash
+
+    - name: プロダクトをVercelにデプロイ
+      run: |
+        if [ "${{ inputs.environment }}" = "production" ]; then
+          vercel deploy --prod --prebuilt --token=${{ inputs.vercel_token }}
+        else
+          if [ "${{ inputs.is_diff }}" = "true" ]; then
+            DEPLOY_URL=$(vercel deploy --prebuilt --env CORE_URL=${{ steps.get_branch_name.outputs.core_url }} --token=${{ inputs.vercel_token }})
+          else
+            DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ inputs.vercel_token }})
+          fi
+          vercel alias set "$DEPLOY_URL" ${{ steps.get_branch_name.outputs.alias_domain }} --token=${{ inputs.vercel_token }} --scope=${{ inputs.vercel_team_id }}
+          echo "DEPLOY_URL=$DEPLOY_URL" >> $GITHUB_ENV
+          echo "ALIAS_URL=https://${{ steps.get_branch_name.outputs.alias_domain }}" >> $GITHUB_ENV
+        fi
+      shell: bash

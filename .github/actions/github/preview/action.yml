@@ -1,0 +1,49 @@
+name: "デプロイとプレビューリンクのコメント"
+description: "アプリケーションをデプロイし、GitHubのPRにプレビューリンクをコメントします"
+
+inputs:
+  vercel_url:
+    description: "デプロイ先のURL"
+    required: true
+  app_name:
+    description: "デプロイしたアプリケーションの名前"
+    required: true
+  alias_url:
+    description: "エイリアスURL"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: PRにプレビューリンクをコメント
+      uses: actions/github-script@v6
+      env:
+        VERCEL_URL: ${{ inputs.vercel_url }}
+        APP_NAME: ${{ inputs.app_name }}
+        ALIAS_URL: ${{ inputs.alias_url }}
+      with:
+        script: |
+          const prNumber = context.payload.pull_request.number;
+          const commitSha = context.payload.pull_request.head.sha;
+          const appName = process.env.APP_NAME;
+          const vercelUrl = process.env.VERCEL_URL;
+          const aliasUrl = process.env.ALIAS_URL;
+          const owner = context.repo.owner;
+          const repo = context.repo.repo;
+          const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+
+          const commentBody = `🚀 **${appName}のプレビュー環境が利用可能になりました**
+          最新の変更がプレビュー環境にデプロイされました。
+
+          🔗 **Vercel のデプロイ URL:** [${vercelUrl}](${vercelUrl})
+
+          🔗 **コミット SHA:** [\`${commitSha}\`](${commitUrl})
+
+          🔗 **エイリアス URL:** [${aliasUrl}](${aliasUrl})`;
+
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prNumber,
+            body: commentBody,
+          });

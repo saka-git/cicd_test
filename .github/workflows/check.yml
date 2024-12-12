@@ -1,0 +1,104 @@
+name: デプロイの制御
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+
+on:
+  push:
+    paths:
+      - "apps/**"
+      - "packages/core-api/**"
+      - "packages/typebase/src/supabase/**"
+    branches-ignore:
+      - main
+      - develop
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/core-api/**"
+      - "packages/typebase/src/supabase/**"
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v3
+
+      - name: 差分があるかを比較
+        id: diff
+        run: |
+          # !pushの場合はdevelopとの差分、pull_requestの場合はbase_refとの差分
+          if [ "${{ github.event_name }}" = "push" ]; then
+            TARGET_BRANCH="develop"
+          else
+            TARGET_BRANCH="${{ github.base_ref }}"
+          fi
+
+          git fetch origin $TARGET_BRANCH --depth=1
+          CHANGED_FILES=$(git diff --name-only origin/$TARGET_BRANCH HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          if echo "$CHANGED_FILES" | grep -qE "^packages/core-api/|^packages/typebase/src/supabase/"; then
+            echo "changed_core_api=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed_core_api=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -qE "^apps/admin/"; then
+            echo "changed_admin=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed_admin=false" >> $GITHUB_OUTPUT
+          fi
+
+          # !employeeアプリがあるとして、変更検出したいなら以下を追加
+          if echo "$CHANGED_FILES" | grep -qE "^apps/employee/"; then
+            echo "changed_employee=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed_employee=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 変更状況確認
+        run: |
+          echo "changed_core_api: ${{ steps.diff.outputs.changed_core_api }}"
+          echo "changed_admin: ${{ steps.diff.outputs.changed_admin }}"
+          echo "changed_employee: ${{ steps.diff.outputs.changed_employee }}"
+
+  core-api:
+    needs: diff
+    # TODO: 後ほどcore-api.ymlに変更
+    uses: ./.github/workflows/call.yml
+    with:
+      diff: ${{ needs.diff.outputs.changed_core_api }}
+      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+    # core-api.yml内で "workflow_output" を GITHUB_OUTPUT に書き出して、URLを返すことを想定
+    # 例: echo "workflow_output=https://new-core-api.example.com" >> $GITHUB_OUTPUT
+
+  admin:
+    # adminはdiffの結果でcore-api変更あれば必ずデプロイ、なければadminが変更されたときのみ
+    needs: diff
+    if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_admin == 'true' }}
+    uses: ./.github/workflows/admin.yml
+    with:
+      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+      # core-apiが変更されていれば新URLを使用、なければデフォルトURL
+      backend_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
+
+  employee:
+    # employeeも同様、core-apiが変われば常にデプロイ、さもなくばemployeeが変更された場合のみ
+    needs: diff
+    if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_employee == 'true' }}
+    uses: ./.github/workflows/employee.yml
+    with:
+      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+      backend_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
+
+  output:
+    runs-on: ubuntu-latest
+    needs: core-api
+    steps:
+      - name: ワークフローの出力を確認
+        run: |
+          echo "workflow_output: ${{ needs.core-api.outputs.workflow_output }}"

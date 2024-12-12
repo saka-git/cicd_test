@@ -1,0 +1,42 @@
+name: Core APIのデプロイ
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_TEAM_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_CORE_API }}
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      APP_NAME: core-api
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+
+      - name: Node.jsをインストール
+        uses: ./.github/actions/node
+
+      - name: pnpmでVercel CLIをインストール
+        run: pnpm add --global vercel@latest
+
+      - name: デプロイ
+        uses: ./.github/actions/vercel/deploy
+        with:
+          environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+          vercel_token: ${{ secrets.VERCEL_TOKEN }}
+          vercel_team_id: ${{ secrets.VERCEL_TEAM_ID }}
+          is_diff: false
+
+      - name: プルリクエストにプレビューリンクをコメント
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: ./.github/actions/github/preview
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vercel_url: ${{ env.DEPLOY_URL }}
+          app_name: ${{ env.APP_NAME }}
+          alias_url: ${{ env.ALIAS_URL }}
