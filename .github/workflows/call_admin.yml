@@ -10,12 +10,24 @@ on:
       ref:
         type: string
         description: "リファレンス"
-      diff:
-        type: string
-        description: "core-apiが変更されているか"
       core_url:
         type: string
         description: "core-apiのURL"
+      event_name:
+        type: string
+        description: "イベント名"
+      pr_number:
+        type: string
+        description: "PRの番号"
+      commit_sha:
+        type: string
+        description: "コミットのSHA"
+      owner:
+        type: string
+        description: "リポジトリのオーナー"
+      repo:
+        type: string
+        description: "リポジトリの名前"
     outputs:
       workflow_output:
         description: "ワークフローの出力"
@@ -27,23 +39,9 @@ on:
 jobs:
   call:
     runs-on: ubuntu-latest
-    outputs:
-      call_output: ${{ steps.call.outputs.test }}
-      url: ${{ steps.call.outputs.url }}
+    env:
+      APP_NAME: admin
     steps:
-      - name: call
-        if: ${{ inputs.diff == 'true' }}
-        id: call
-        run: |
-          echo "call"
-          echo "ref: ${{ inputs.ref }}"
-          echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
-
-      - name: core_url
-        if: ${{ inputs.diff == 'false' }}
-        run: |
-          echo "core_url=" >> "$GITHUB_OUTPUT"
-
       - name: ワークフローの出力を確認
         if: ${{ inputs.core_url != '' }}
         run: |
@@ -53,3 +51,22 @@ jobs:
         if: ${{ inputs.core_url == '' }}
         run: |
           echo "core_url: none"
+
+      # - name: deploy
+      #   uses: ./.github/actions/deploy
+      #   with:
+      #     ref: ${{ inputs.ref }}
+      #     core_url: ${{ inputs.core_url }}
+
+      - name: プルリクエストにプレビューリンクをコメント
+        if: ${{ inputs.event_name == 'pull_request' }}
+        uses: ./.github/actions/github/preview
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # vercel_url: ${{ env.DEPLOY_URL }}
+          vercel_url: "https://admin-preview-20241212.vercel.app"
+          app_name: ${{ env.APP_NAME }}
+          pr_number: ${{ inputs.pr_number }}
+          commit_sha: ${{ inputs.commit_sha }}
+          owner: ${{ inputs.owner }}
+          repo: ${{ inputs.repo }}

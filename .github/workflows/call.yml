@@ -33,10 +33,10 @@ jobs:
           echo "ref: ${{ inputs.ref }}"
           echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
 
-  no_deploy:
+  deploy_skip:
     runs-on: ubuntu-latest
     if: ${{ inputs.diff == 'false' }}
     steps:
-      - name: core_url
+      - name: deploy_skip
         run: |
-          echo "core_url=" >> "$GITHUB_OUTPUT"
+          echo "deploy skip"

@@ -95,9 +95,13 @@ jobs:
     uses: ./.github/workflows/call_admin.yml
     with:
       ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
-      diff: ${{ needs.diff.outputs.changed_core_api }}
       # !core-apiが変更されていれば新URLを使用、なければデフォルトURL
       core_url: ${{ needs.core-api.outputs.core_url }}
+      event_name: ${{ github.event_name }}
+      pr_number: ${{ github.event.number }}
+      commit_sha: ${{ github.event.pull_request.head.sha }}
+      owner: ${{ github.repository_owner }}
+      repo: ${{ github.repository }}
 
   # employee:
   #   # employeeも同様、core-apiが変われば常にデプロイ、さもなくばemployeeが変更された場合のみ
