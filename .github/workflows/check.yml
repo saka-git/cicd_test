@@ -97,7 +97,7 @@ jobs:
     with:
       ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
       # !core-apiが変更されていれば新URLを使用、なければデフォルトURL
-      core_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
+      core_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.core_url || 'https://existing-core-api.example.com' }}
 
   # employee:
   #   # employeeも同様、core-apiが変われば常にデプロイ、さもなくばemployeeが変更された場合のみ

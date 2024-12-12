@@ -14,9 +14,6 @@ on:
         type: string
         description: "リファレンス"
     outputs:
-      workflow_output:
-        description: "ワークフローの出力"
-        value: ${{ jobs.call.outputs.call_output }}
       url:
         description: "core-apiのURL"
         value: ${{ jobs.call.outputs.core_url }}
