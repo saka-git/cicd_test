@@ -14,25 +14,29 @@ on:
         type: string
         description: "リファレンス"
     outputs:
-      workflow_output:
-        description: "ワークフローの出力"
-        value: ${{ jobs.call.outputs.call_output }}
+      core_url:
+        description: "core-apiのURL"
+        value: ${{ jobs.call.outputs.core_url || '' }}
 
 jobs:
-  call:
+  core_deploy:
     runs-on: ubuntu-latest
+    if: ${{ inputs.diff == 'true' }}
     outputs:
       call_output: ${{ steps.call.outputs.test }}
+      core_url: ${{ steps.call.outputs.core_url }}
     steps:
       - name: call
-        if: ${{ inputs.diff == 'true' }}
         id: call
         run: |
           echo "call"
           echo "ref: ${{ inputs.ref }}"
           echo "core_url=https://new-core-api.example.com" >> "$GITHUB_OUTPUT"
 
-      - name: core_url
-        if: ${{ inputs.diff == 'false' }}
+  deploy_skip:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.diff == 'false' }}
+    steps:
+      - name: deploy_skip
         run: |
-          echo "core_url=" >> "$GITHUB_OUTPUT"
+          echo "deploy skip"

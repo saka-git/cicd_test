@@ -8,8 +8,17 @@ inputs:
   app_name:
     description: "デプロイしたアプリケーションの名前"
     required: true
-  alias_url:
-    description: "エイリアスURL"
+  pr_number:
+    description: "PRの番号"
+    required: true
+  commit_sha:
+    description: "コミットのSHA"
+    required: true
+  owner:
+    description: "リポジトリのオーナー"
+    required: true
+  repo:
+    description: "リポジトリの名前"
     required: true
 
 runs:
@@ -20,16 +29,15 @@ runs:
       env:
         VERCEL_URL: ${{ inputs.vercel_url }}
         APP_NAME: ${{ inputs.app_name }}
-        ALIAS_URL: ${{ inputs.alias_url }}
       with:
         script: |
-          const prNumber = context.payload.pull_request.number;
-          const commitSha = context.payload.pull_request.head.sha;
+          const prNumber = "${{ inputs.pr_number }}";
+          const commitSha = "${{ inputs.commit_sha }}";
           const appName = process.env.APP_NAME;
           const vercelUrl = process.env.VERCEL_URL;
-          const aliasUrl = process.env.ALIAS_URL;
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
+          const owner = "${{ inputs.owner }}";
+          const repo = "${{ inputs.repo }}";
+
           const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
 
           const commentBody = `🚀 **${appName}のプレビュー環境が利用可能になりました**
@@ -37,13 +45,11 @@ runs:
 
           🔗 **Vercel のデプロイ URL:** [${vercelUrl}](${vercelUrl})
 
-          🔗 **コミット SHA:** [\`${commitSha}\`](${commitUrl})
-
-          🔗 **エイリアス URL:** [${aliasUrl}](${aliasUrl})`;
+          🔗 **コミット SHA:** [\`${commitSha}\`](${commitUrl})`;
 
           await github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: prNumber,
+            issue_number: parseInt(prNumber),
             body: commentBody,
           });
