@@ -7,12 +7,12 @@ env:
 on:
   workflow_call:
     inputs:
-      diff:
-        type: string
-        description: "差分"
       ref:
         type: string
         description: "リファレンス"
+      core_url:
+        type: string
+        description: "core-apiのURL"
     outputs:
       workflow_output:
         description: "ワークフローの出力"

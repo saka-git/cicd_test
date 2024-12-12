@@ -76,25 +76,6 @@ jobs:
     # core-api.yml内で "workflow_output" を GITHUB_OUTPUT に書き出して、URLを返すことを想定
     # 例: echo "workflow_output=https://new-core-api.example.com" >> $GITHUB_OUTPUT
 
-  admin:
-    # adminはdiffの結果でcore-api変更あれば必ずデプロイ、なければadminが変更されたときのみ
-    needs: diff
-    if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_admin == 'true' }}
-    uses: ./.github/workflows/admin.yml
-    with:
-      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
-      # core-apiが変更されていれば新URLを使用、なければデフォルトURL
-      backend_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
-
-  employee:
-    # employeeも同様、core-apiが変われば常にデプロイ、さもなくばemployeeが変更された場合のみ
-    needs: diff
-    if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_employee == 'true' }}
-    uses: ./.github/workflows/employee.yml
-    with:
-      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
-      backend_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
-
   output:
     runs-on: ubuntu-latest
     needs: core-api
@@ -102,3 +83,23 @@ jobs:
       - name: ワークフローの出力を確認
         run: |
           echo "workflow_output: ${{ needs.core-api.outputs.workflow_output }}"
+          echo "core_url: ${{ needs.core-api.outputs.core_url }}"
+
+  admin:
+    # adminはdiffの結果でcore-api変更あれば必ずデプロイ、なければadminが変更されたときのみ
+    needs: [diff, core-api]
+    if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_admin == 'true' }}
+    uses: ./.github/workflows/call_admin.yml
+    with:
+      ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+      # !core-apiが変更されていれば新URLを使用、なければデフォルトURL
+      core_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
+
+  # employee:
+  #   # employeeも同様、core-apiが変われば常にデプロイ、さもなくばemployeeが変更された場合のみ
+  #   needs: [diff, core-api]
+  #   if: ${{ needs.diff.outputs.changed_core_api == 'true' || needs.diff.outputs.changed_employee == 'true' }}
+  #   uses: ./.github/workflows/call_employee.yml
+  #   with:
+  #     ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+  #     core_url: ${{ needs.diff.outputs.changed_core_api == 'true' && needs.core-api.outputs.workflow_output || 'https://existing-core-api.example.com' }}
